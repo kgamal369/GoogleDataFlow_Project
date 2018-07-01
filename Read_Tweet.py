@@ -50,6 +50,7 @@ import argparse
 import logging
 import re
 
+
 import apache_beam as beam
 from apache_beam.io import ReadFromText
 from apache_beam.io import WriteToText
@@ -68,13 +69,13 @@ def run(argv=None):
   parser = argparse.ArgumentParser()
   parser.add_argument('--input',
                       dest='input',
-                      default='gs://dataflow-samples/shakespeare/kinglear.txt',
+                      default='gs://dataflow-kga369-207722/twitter_data.txt',
                       help='Input file to process.')
   parser.add_argument('--output',
                       dest='output',
                       # CHANGE 1/5: The Google Cloud Storage path is required
                       # for outputting the results.
-                      default='gs://YOUR_OUTPUT_BUCKET/AND_OUTPUT_PREFIX',
+                      default='$BUCKET/output',
                       help='Output file to write results to.')
   known_args, pipeline_args = parser.parse_known_args(argv)
   pipeline_args.extend([
@@ -83,17 +84,17 @@ def run(argv=None):
       '--runner=DirectRunner',
       # CHANGE 3/5: Your project ID is required in order to run your pipeline on
       # the Google Cloud Dataflow Service.
-      '--project=SET_YOUR_PROJECT_ID_HERE',
+      '--project=$PROJECT',
       # CHANGE 4/5: Your Google Cloud Storage path is required for staging local
       # files.
-      '--staging_location=gs://YOUR_BUCKET_NAME/AND_STAGING_DIRECTORY',
+      '--staging_location=$BUCKET/staging',
       # CHANGE 5/5: Your Google Cloud Storage path is required for temporary
       # files.
-      '--temp_location=gs://YOUR_BUCKET_NAME/AND_TEMP_DIRECTORY',
+      '--temp_location=$BUCKET/temp',
       '--job_name=your-wordcount-job',
   ])
 
-  # We use the save_main_session option because one or more DoFn's in this
+ # We use the save_main_session option because one or more DoFn's in this
   # workflow rely on global context (e.g., a module imported at module level).
   pipeline_options = PipelineOptions(pipeline_args)
   pipeline_options.view_as(SetupOptions).save_main_session = True
@@ -105,7 +106,7 @@ def run(argv=None):
     # Count the occurrences of each word.
     counts = (
         lines
-        | 'Split' >> (beam.FlatMap(lambda x: re.findall(r'[A-Za-z\']+', x))
+        | 'Split' >> (beam.FlatMap(lambda x: re.findall(r'[#]+[A-Za-z\']+', x))
                       .with_output_types(unicode))
         | 'PairWithOne' >> beam.Map(lambda x: (x, 1))
         | 'GroupAndSum' >> beam.CombinePerKey(sum))
